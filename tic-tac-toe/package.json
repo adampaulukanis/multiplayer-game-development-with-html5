@@ -1,19 +1,19 @@
 {
-    "name": "tic-tac-toe",
-    "version": "0.0.0",
-    "private": true,
-    "scripts": {
-        "web-server": "nodemon ./bin/www",
-        "socket-server": "nodemon server.js"
-    },
-    "dependencies": {
-        "body-parser": "^1.8.1",
-        "cookie-parser": "^1.3.3",
-        "debug": "^2.0.0",
-        "express": "^4.9.0",
-        "jade": "^0.29.0",
-        "morgan": "^1.3.0",
-        "serve-favicon": "^2.1.3",
-        "ws": "*"
-    }
+  "name": "tic-tac-toe",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "web-server": "nodemon ./bin/www",
+    "socket-server": "nodemon server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.8.1",
+    "cookie-parser": "^1.3.3",
+    "debug": "^2.0.0",
+    "express": "^4.9.0",
+    "jade": "^0.29.0",
+    "morgan": "^1.3.0",
+    "serve-favicon": "^2.1.3",
+    "ws": "*"
+  }
 }
