@@ -1,19 +1,24 @@
+/** Id doea two things:
+ * 1) it takes input from the user with which it drives the server,
+ * 2) it uses input that it receives from the server in order to drive the board.
+ */
 var socket = new WebSocket('ws://localhost:2667');
+
 var events = {
-    outgoing: {
-        JOIN_GAME: 'csJoinGame',
-        MARK: 'csMark',
-        QUIT: 'csQuit'
-    },
-    incoming: {
-        JOIN_GAME: 'scJoinGame',
-        MARK: 'scMark',
-        SET_TURN: 'scSetTurn',
-        OPPONENT_READY: 'scOpponentReady',
-        GAME_OVER: 'scGameOver',
-        ERROR: 'scError',
-        QUIT: 'scQuit'
-    }
+  outgoing: {
+    JOIN_GAME: 'csJoinGame',
+    MARK: 'csMark',
+    QUIT: 'csQuit',
+  },
+  incoming: {
+    JOIN_GAME: 'scJoinGame',
+    MARK: 'scMark',
+    SET_TURN: 'scSetTurn',
+    OPPONENT_READY: 'scOpponentReady',
+    GAME_OVER: 'scGameOver',
+    ERROR: 'scError',
+    QUIT: 'scQuit',
+  },
 };
 
 var container = document.querySelector('#gameBoard');
@@ -21,8 +26,8 @@ var startBtn = document.querySelector('#startBtn');
 var nameInput = document.querySelector('#nickname');
 
 var scoreBoard = [
-    document.querySelector('#p1Score'),
-    document.querySelector('#p2Score')
+  document.querySelector('#p1Score'),
+  document.querySelector('#p2Score'),
 ];
 
 var hero = {};
@@ -38,96 +43,105 @@ nameInput.setAttribute('placeholder', 'Loading...');
  * @param data
  * @returns {*}
  */
-function makeMessage(action, data){
-    var resp = {
-        action: action,
-        data: data
-    };
+function makeMessage(action, data) {
+  var resp = {
+    action: action,
+    data: data,
+  };
 
-    return JSON.stringify(resp);
+  return JSON.stringify(resp);
 }
 
 /**
  *
  * @param cellId
  */
-board.onMark = function(cellId){
-    socket.send(makeMessage(events.outgoing.MARK, {playerId: hero.id, cellId: cellId}));
+board.onMark = function (cellId) {
+  socket.send(
+    makeMessage(events.outgoing.MARK, { playerId: hero.id, cellId: cellId })
+  );
 };
 
 /**
  *
  */
 function start() {
-    while (container.lastChild) {
-        container.removeChild(container.lastChild);
-    }
+  while (container.lastChild) {
+    container.removeChild(container.lastChild);
+  }
 
-    if (board.players.length === 1) {
-        scoreBoard[1].textContent = 'waiting...';
-    }
+  if (board.players.length === 1) {
+    scoreBoard[1].textContent = 'waiting...';
+  }
 
-    board.bindTo(container);
+  board.bindTo(container);
 }
 
-startBtn.addEventListener('click', function(event) {
-    var name = nameInput.value.trim();
+startBtn.addEventListener('click', function (event) {
+  var name = nameInput.value.trim();
 
-    if (name.length > 0) {
-        hero.name = name;
-        socket.send(makeMessage(events.outgoing.JOIN_GAME, name));
-    }
+  if (name.length > 0) {
+    hero.name = name;
+    socket.send(makeMessage(events.outgoing.JOIN_GAME, name));
+  }
 });
 
-socket.onmessage = function(event){
-    var msg = JSON.parse(event.data);
+socket.onmessage = function (event) {
+  var msg = JSON.parse(event.data);
 
-    switch (msg.action) {
-        case events.incoming.ERROR:
-            alert('Error: ' + msg.data);
-            break;
-        case events.incoming.JOIN_GAME:
-            board.addPlayer(msg.data);
-            if (msg.data.name === hero.name) {
-                hero = msg.data;
-                start();
-            }
+  switch (msg.action) {
+    case events.incoming.ERROR:
+      alert('Error: ' + msg.data);
+      break;
 
-            break;
-        case events.incoming.SET_TURN:
-            board.highlightScoreboard(msg.data.id);
-            board.ready = true;
-            if (msg.data.id === hero.id) {
-                board.enableTurn();
-            }
+    case events.incoming.JOIN_GAME:
+      board.addPlayer(msg.data);
+      if (msg.data.name === hero.name) {
+        hero = msg.data;
+        start();
+      }
+      break;
 
-            break;
-        case events.incoming.MARK:
-            board.doMark(msg.data.cellId, msg.data.player.label);
+    case events.incoming.SET_TURN:
+      board.highlightScoreboard(msg.data.id);
+      board.ready = true;
+      if (msg.data.id === hero.id) {
+        board.enableTurn();
+      }
+      break;
 
-            break;
+    case events.incoming.MARK:
+      board.doMark(msg.data.cellId, msg.data.player.label);
+      break;
 
-        case events.incoming.GAME_OVER:
-            if (msg.data.player) {
-                board.doWinner(msg.data.pos);
-            } else {
-                board.doDraw();
-            }
+    /**
+     * The client cleans things up, tells the player that the game is over
+     * either because someone won the game or the game ended in a draw, then
+     * it tells the server that it is ready to disconnect.
+     */
+    case events.incoming.GAME_OVER:
+      if (msg.data.player) {
+        board.doWinner(msg.data.pos);
+      } else {
+        board.doDraw();
+      }
+      socket.send(makeMessage(events.outgoing.QUIT, hero.id));
+      break;
 
-            socket.send(makeMessage(events.outgoing.QUIT, hero.id));
-
-            break;
-
-        case events.incoming.QUIT:
-            socket.close();
-
-            break;
-    }
+    /**
+     * The client waits for the server to tell it what to do next. In this
+     * case, it waits for the server to clean up, then tells the client to
+     * disconnect itself.
+     */
+    case events.incoming.QUIT:
+      socket.close();
+      break;
+  }
 };
 
-socket.onopen = function(event) {
-    startBtn.removeAttribute('disabled');
-    nameInput.removeAttribute('disabled');
-    nameInput.removeAttribute('placeholder');
-    nameInput.focus();
+socket.onopen = function (event) {
+  startBtn.removeAttribute('disabled');
+  nameInput.removeAttribute('disabled');
+  nameInput.removeAttribute('placeholder');
+  nameInput.focus();
 };
