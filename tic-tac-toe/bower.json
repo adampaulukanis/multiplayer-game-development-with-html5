@@ -1,0 +1,21 @@
+{
+  "name": "tic-tac-toe",
+  "description": "",
+  "main": "",
+  "authors": [
+    "Adam Paulukanis <adam.paulukanis@gmail.com>"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/adampaulukanis/multiplayer-game-development-with-html5",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "^3.6.0"
+  }
+}
